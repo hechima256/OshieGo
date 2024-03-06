@@ -78,8 +78,9 @@ class TimeManager:
             remaining_time = self.remaining_time[0] \
                 if color is Stone.BLACK else self.remaining_time[1]
             self.time_limit = remaining_time / 10.0
-            threshold = int(self.search_speed * self.time_limit)
-            return threshold if threshold > 0 else 1
+            if self.time_limit > 30.0:
+                self.time_limit = 30.0 # 一手30.0s以上は消費しない
+            return int(self.search_speed * self.time_limit)
         return int(self.constant_visits)
 
 
