@@ -26,6 +26,7 @@ class SelfPlayRecord:
         self.pos = [0] * MAX_RECORDS
         self.coord = coord
         self.policy_target = [""] * MAX_RECORDS
+        self.value_estimate = [""] * MAX_RECORDS # 勝率予測値。-1.0~1.0, 1は黒よし、-1は白よし。雑巾絞りの勝率項につかう。
         self.save_dir = save_dir
         self.file_index = 1
 
@@ -61,7 +62,10 @@ class SelfPlayRecord:
             policy_target += f" {pos}:{improved_policy[i]:.3e}"
 
         self.policy_target[self.record_moves] = policy_target
-
+        value = root.raw_value * 2 - 1 # [0, 1]の範囲を[-1, 1]に変換
+        value = -value if color == Stone.WHITE else value # 黒から見た評価値に変換
+        self.value_estimate[self.record_moves] = f"{value:.3e}"
+        
         self.record_moves += 1
 
     def write_record(self, winner: Stone, komi: float, is_resign: bool, score: float) -> NoReturn:
@@ -99,6 +103,7 @@ class SelfPlayRecord:
             else:
                 sgf_string += f";W[{self.pos[i]}]"
             sgf_string += "C[" + self.policy_target[i] + "]"
+            sgf_string += "V[" + self.value_estimate[i] + "]" # Value(評価値)を表す
 
         sgf_string += "\n)"
 

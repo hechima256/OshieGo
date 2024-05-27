@@ -87,13 +87,15 @@ def generate_supervised_learning_data(program_dir: str, kifu_dir: str, \
 
 
 def generate_reinforcement_learning_data(program_dir: str, kifu_dir_list: List[str], \
-    board_size: int=9) -> NoReturn:
+    board_size: int=9, l: float=0.5, depth: int=5) -> NoReturn:
     """強化学習で使用するデータを生成し、保存する。
 
     Args:
         program_dir (str): プログラムのホームディレクトリ。
         kifu_dir_list (List[str]): 棋譜ファイルを保存しているディレクトリパスのリスト。
         board_size (int, optional): 碁盤の大きさ。デフォルトは9。
+        l (float, optional): elmo絞りの勝率項を混ぜる割合。デフォルトは0.5。
+        depth (int, optional): 勝率項で何手先の値を用いるか。デフォルトは5手先。
     """
     board = GoBoard(board_size=board_size)
 
@@ -121,10 +123,15 @@ def generate_reinforcement_learning_data(program_dir: str, kifu_dir_list: List[s
         #sym = np.random.permutation(np.arange(8))[0]
         for i, pos in enumerate(sgf.get_moves()):
             if i in target_index:
+                value_estimate = sgf.get_value_estimate(i+depth)
+
+                # 現手番から見た値に変え、[-1, 1]の範囲を学習用の[0, 2]にスライド。
+                value_estimate_label = (-value_estimate if color == Stone.WHITE else value_estimate) + 1
+
                 sym = sym_index_list[sym_index]
                 input_data.append(generate_input_planes(board, color, sym))
                 policy_data.append(generate_rl_target_data(board, sgf.get_comment(i), sym))
-                value_data.append(value_label)
+                value_data.append((1.0 - l) *value_label + l *value_estimate_label)
                 sym_index += 1
             board.put_stone(pos, color)
             color = Stone.get_opponent_color(color)

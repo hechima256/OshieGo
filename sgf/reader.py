@@ -46,6 +46,7 @@ class SGFReader: # pylint: disable=R0902
         self.move = [0] * board_size * board_size * 3
         self.komi = 7.0
         self.result = MatchResult.DRAW
+        self.value_estimate = [0.0] * board_size * board_size * 3
         self.comment = [""] * board_size * board_size * 3
         self.moves = 0
         self.size = board_size
@@ -84,6 +85,8 @@ class SGFReader: # pylint: disable=R0902
                 cursor = self._get_move(sgf_text, cursor, Stone.WHITE)
             elif sgf_text[cursor:cursor+2] == "C[":
                 cursor = self._get_comment(sgf_text, cursor)
+            elif sgf_text[cursor:cursor+2] == "V[":
+                cursor = self._get_value_estimate(sgf_text, cursor)
             elif sgf_text[cursor:cursor+3] == "EV[":
                 cursor = self._get_event(sgf_text, cursor)
             elif sgf_text[cursor:cursor+3] == "PB[":
@@ -156,6 +159,25 @@ class SGFReader: # pylint: disable=R0902
 
         self.comment[self.moves - 1] = sgf_text[cursor+2:cursor+tmp_cursor]
 
+        return cursor + tmp_cursor
+
+    def _get_value_estimate(self, sgf_text: str, cursor: int) -> int:
+        """Vタグからコメントを読み込む。
+
+        Args:
+            sgf_text (str): SGFテキスト。
+            cursor (int): 現在見ているカーソルの位置。
+
+        Returns:
+            int: 次見るカーソルの位置。
+        """
+        tmp_cursor = 2
+
+        while sgf_text[cursor+tmp_cursor] != ']':
+            tmp_cursor += 1
+        
+        self.value_estimate[self.moves - 1] = float(sgf_text[cursor+2:cursor+tmp_cursor])
+        
         return cursor + tmp_cursor
 
     def _get_event(self, sgf_text: str, cursor: int) -> int:
@@ -356,6 +378,30 @@ class SGFReader: # pylint: disable=R0902
             return 1
         print_err(f"Invalid value label {self.result}")
         return 1
+
+    def get_value_estimate(self, index: int) -> float:
+        """指定の手数の勝率予測値を取得する。
+        終局を超えた手数の場合は勝敗を{-1, 0, 1}(黒目線)に変換したものが返される。
+
+        Args:
+            index (int): 手数。
+
+        Returns:
+            float: 指定した手数の勝率予測値(-1 ~ 1)。黒番目線。
+        """
+
+        if index >= self.moves:
+            if self.result is MatchResult.BLACK_WIN:
+                return 1
+            if self.result is MatchResult.WHITE_WIN:
+                return -1
+            if self.result is MatchResult.DRAW:
+                return 0                
+        elif index < 0:
+            print_err("underrun value estimate")
+            return 0
+        else:
+            return self.value_estimate[index]
 
     def get_comment(self, index: int) -> str:
         """指定の手数のコメントを取得する。
