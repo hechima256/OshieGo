@@ -227,12 +227,6 @@ class MCTSTree: # pylint: disable=R0902
             _, pm2, _ = board.record.get(board.moves - 2)
             if pm1 == PASS and pm2 == PASS:
                 expand_threshold = 10000000
-<<<<<<< HEAD
-=======
-
-        if self.node[current_index].children_visits[next_index] < expand_threshold:
-            # ニューラルネットワークの計算
->>>>>>> 56ed234 (bugfix)
 
         if self.node[current_index].children_visits[next_index] \
             + self.node[current_index].children_virtual_loss[next_index] < expand_threshold + 1:
