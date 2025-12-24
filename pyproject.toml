@@ -1,0 +1,13 @@
+[project]
+name = "oshiego"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9" # 3.12だとnumpy2.0の型チェックでエラー
+dependencies = [
+    "click>=6.7",
+    "graphviz>=0.19.1",
+    "matplotlib>=3.7.5",
+    "numpy>=1.19.5",
+    "torch>=1.10.0",
+]
